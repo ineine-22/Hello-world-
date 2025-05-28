@@ -3,27 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>도박 게임 2 - 온라인</title>
+  <title>10to10 online</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>도박 게임 2</h1>
-    <div class="join">
-      <input type="text" id="nameInput" placeholder="닉네임 입력" />
-      <button id="joinBtn">게임 참여</button>
-    </div>
-    <div id="gameArea" style="display:none;">
-      <h2 id="playerName"></h2>
-      <input type="number" id="betInput" placeholder="베팅 금액" />
-      <button id="betBtn">베팅</button>
-      <button id="compareBtn">비교</button>
-      <ul id="playerList"></ul>
-    </div>
-    <footer>
-      <p>⚠️ 이는 Lee의 저작물로써 <strong>저작자 표시, 비영리, 변경금지</strong>를 따릅니다.</p>
-    </footer>
+  <h1 class="game-title">10to10 online</h1>
+  
+  <div id="nickname-screen">
+    <h2>닉네임을 입력하세요</h2>
+    <input type="text" id="nickname-input" placeholder="닉네임 입력" />
+    <button id="join-btn">입장</button>
   </div>
+
+  <div id="game-screen" style="display: none;">
+    <h2>회차: <span id="round-number">1</span>          배율: <span id="current-multiplier">?</span>배!</h2>
+    
+
+    <section id="player-list">
+      <h3>현재 플레이어 목록</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>닉네임</th>
+            <th>자산</th>
+            <th>이전 베팅</th>
+            <th>증감</th>
+          </tr>
+        </thead>
+        <tbody id="player-table-body"></tbody>
+      </table>
+    </section>
+
+    <section id="self-section">
+      <h3>내 정보</h3>
+      <p>남은 시간: <progress id="time-bar" value="10" max="10"></progress> <span id="time-text">10초</span></p>
+      <p>내 자산: <span id="my-money">0</span></p>
+      <input type="number" id="bet-input" placeholder="베팅금 입력" />
+      
+      <div id="log"></div>
+    </section>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>

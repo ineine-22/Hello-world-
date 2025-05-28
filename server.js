@@ -1,47 +1,106 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-let players = [];
+const players = {};
+let countdown = 10;
+let currentMultiplier = 1;
+let round = 1;
+
+function getRandomMultiplier() {
+  const r = Math.floor(Math.random() * 101);
+  if (98 <= r && r <= 100) return 10.0;
+  else if (90 <= r && r <= 97) return 5.0;
+  else if (70 <= r && r <= 89) return 2.0;
+  else if (50 <= r && r <= 69) return 1.5;
+  else if (30 <= r && r <= 49) return 0.5;
+  else if (10 <= r && r <= 29) return 0.25;
+  else if (2 <= r && r <= 9) return 0.1;
+  else return 0.0;
+}
+
+function startGameLoop() {
+  countdown = 10;
+  io.emit('countdown', countdown);
+  io.emit('round', round);
+
+  const interval = setInterval(() => {
+    countdown--;
+    io.emit('countdown', countdown);
+
+    if (countdown <= 0) {
+  clearInterval(interval);
+
+  currentMultiplier = getRandomMultiplier();
+  io.emit('multiplier', currentMultiplier);
+
+  for (const id in players) {
+    const player = players[id];
+    const bet = player.pendingBet;
+
+    if (bet > 0 && bet <= player.money) {
+      const profit = bet * currentMultiplier;
+      player.money = player.money - bet + profit;
+      player.change = profit - bet;
+      player.lastBet = bet;
+    } else {
+      player.change = 0;
+      player.lastBet = 0;
+    }
+
+    player.pendingBet = 0; // 초기화
+  }
+
+  io.emit('players', players);
+
+  round++;
+  startGameLoop();
+}
+
+
+  }, 1000);
+}
 
 io.on('connection', socket => {
-  console.log('A user connected:', socket.id);
+  console.log('User connected:', socket.id);
 
-  socket.on('join', (name) => {
-    players.push({ id: socket.id, name, money: 1000, bet: 0 });
-    io.emit('playersUpdate', players);
+  socket.on('join', name => {
+    players[socket.id] = { name, money: 10000, lastBet: 0, pendingBet: 0, change: 0 };
+    socket.emit('multiplier', currentMultiplier);
+    socket.emit('countdown', countdown);
+    socket.emit('round', round);
+    io.emit('players', players);
+    socket.emit('joinSuccess');
   });
 
-  socket.on('bet', (amount) => {
-    let player = players.find(p => p.id === socket.id);
-    if (player) {
-      player.bet = parseInt(amount);
-      io.emit('playersUpdate', players);
-    }
-  });
+  socket.on('bet', amount => {
+  const player = players[socket.id];
+  if (!player) return;
 
-  socket.on('compare', () => {
-    const maxBet = Math.max(...players.map(p => p.bet));
-    players.forEach(p => {
-      if (p.bet === maxBet) p.money += 100;
-      else p.money -= 100;
+  if (amount <= 0 || amount > player.money) {
+    socket.emit('betError', '베팅 금액이 올바르지 않습니다.');
+    return;
+  }
+
+  // 자산에서 차감하지 않고, pendingBet만 설정
+  player.pendingBet = amount;
+
+  io.emit('players', players); // 클라이언트는 여전히 미리보기로 보여줌
     });
-    players.forEach(p => (p.bet = 0));
-    io.emit('playersUpdate', players);
-  });
+
 
   socket.on('disconnect', () => {
-    players = players.filter(p => p.id !== socket.id);
-    io.emit('playersUpdate', players);
+    delete players[socket.id];
+    io.emit('players', players);
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+startGameLoop();
+
+const PORT = 3000;
+http.listen(PORT, () => {
+  console.log(`서버 실행 중 http://localhost:${PORT}`);
 });
