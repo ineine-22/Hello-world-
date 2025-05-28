@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>도박 게임 2 - 온라인</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>도박 게임 2</h1>
+    <div class="join">
+      <input type="text" id="nameInput" placeholder="닉네임 입력" />
+      <button id="joinBtn">게임 참여</button>
+    </div>
+    <div id="gameArea" style="display:none;">
+      <h2 id="playerName"></h2>
+      <input type="number" id="betInput" placeholder="베팅 금액" />
+      <button id="betBtn">베팅</button>
+      <button id="compareBtn">비교</button>
+      <ul id="playerList"></ul>
+    </div>
+    <footer>
+      <p>⚠️ 이는 Lee의 저작물로써 <strong>저작자 표시, 비영리, 변경금지</strong>를 따릅니다.</p>
+    </footer>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
