@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>10to10 online</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1 class="game-title">10to10 online</h1>
-  
+
   <div id="nickname-screen">
     <h2>닉네임을 입력하세요</h2>
     <input type="text" id="nickname-input" placeholder="닉네임 입력" />
@@ -16,18 +16,18 @@
   </div>
 
   <div id="game-screen" style="display: none;">
-    <h2>회차: <span id="round-number">1</span>          배율: <span id="current-multiplier">?</span>배!</h2>
-    
+    <h2>회차: <span id="round-number">1</span> 배율: <span id="current-multiplier">?</span>배</h2>
 
     <section id="player-list">
-      <h3>현재 플레이어 목록</h3>
+      <h3>현재 플레이어 순위</h3>
       <table>
         <thead>
           <tr>
+            <th>순위</th>
             <th>닉네임</th>
             <th>자산</th>
-            <th>이전 베팅</th>
-            <th>증감</th>
+            <th>input</th>
+            <th>output</th>
           </tr>
         </thead>
         <tbody id="player-table-body"></tbody>
@@ -38,8 +38,17 @@
       <h3>내 정보</h3>
       <p>남은 시간: <progress id="time-bar" value="10" max="10"></progress> <span id="time-text">10초</span></p>
       <p>내 자산: <span id="my-money">0</span></p>
+
+      <label for="unit-select">입력 모드:</label>
+<select id="unit-select">
+  <option value="1">원</option>
+  <option value="10000">만</option>
+  <option value="100000000">억</option>
+  <option value="1000000000000">조</option>
+</select>
+
+
       <input type="number" id="bet-input" placeholder="베팅금 입력" />
-      
       <div id="log"></div>
     </section>
   </div>

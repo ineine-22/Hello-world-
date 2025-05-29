@@ -16,11 +16,11 @@ const roundNumberSpan = document.getElementById('round-number');
 let myId = null;
 let myMoney = 0;
 
-let serverCountdown = 10; // 서버가 알려주는 카운트다운 (초 단위)
-let localCountdown = 10; // 클라이언트가 0.1초 단위로 감소시키는 카운트다운 (초 단위, 소수점 포함)
+let localCountdown = 10;
 let countdownInterval = null;
 
 joinBtn.addEventListener('click', () => {
+
   const name = nicknameInput.value.trim();
   if (!name) {
     alert('닉네임을 입력하세요.');
@@ -38,22 +38,21 @@ socket.on('round', round => {
 });
 
 socket.on('multiplier', multiplier => {
-  currentMultiplierSpan.textContent = multiplier.toFixed(2);
+  currentMultiplierSpan.textContent = multiplier.toFixed(1);
 });
 
-socket.on('countdown', time => {
-  serverCountdown = time;
-  localCountdown = time; // 서버 카운트다운을 받으면 로컬 카운트다운을 맞춤
 
-  // 입력 활성화/비활성화 처리
+
+socket.on('countdown', time => {
+  localCountdown = time;
+
   if (time === 10) {
     betInput.disabled = false;
     betInput.value = '';
     logDiv.textContent = '';
+
   } else if (time === 0) {
     betInput.disabled = true;
-
-    // 베팅 금액 서버에 일괄 전송
     const betAmount = Number(betInput.value);
     if (!isNaN(betAmount) && betAmount > 0 && betAmount <= myMoney) {
       socket.emit('bet', betAmount);
@@ -61,19 +60,24 @@ socket.on('countdown', time => {
     betInput.value = '';
   }
 
-  updateTimeDisplay(localCountdown);
+  timer0_1(localCountdown);
 });
+
+
 
 socket.on('players', players => {
   playerTableBody.innerHTML = '';
-  for (const id in players) {
-    const p = players[id];
+  const sorted = Object.entries(players).sort(([, a], [, b]) => b.money - a.money);
+  let rank = 1;
+
+  for (const [id, p] of sorted) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td>${rank++}</td>
       <td>${p.name}</td>
       <td>${p.money.toFixed(0)}</td>
-      <td>${p.lastBet.toFixed(0)}</td>
-      <td style="color:${p.change >= 0 ? 'green' : 'red'}">${p.change >= 0 ? '+' : ''}${p.change.toFixed(0)}</td>
+      <td>${p.input.toFixed(0)}</td>
+      <td>${p.output.toFixed(0)}</td>
     `;
     playerTableBody.appendChild(tr);
 
@@ -84,27 +88,33 @@ socket.on('players', players => {
   }
 });
 
+
+//서버로부터 참가 승인 받으면 닉네임 화면 숨기고 게임 화면 보여줌
 socket.on('joinSuccess', () => {
   nicknameScreen.style.display = 'none';
   gameScreen.style.display = 'block';
 
+
+  //0.1초 단위로 남은 시간을 부드럽게 표시하기 위한 클라이언트 내부 타이머 시작
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = setInterval(() => {
     if (localCountdown > 0) {
       localCountdown -= 0.1;
       if (localCountdown < 0) localCountdown = 0;
-      updateTimeDisplay(localCountdown);
+      timer0_1(localCountdown);
     }
   }, 100);
 });
 
-function updateTimeDisplay(time) {
+function timer0_1(time) {
   timeBar.value = time;
   timeText.textContent = `${time.toFixed(1)}초`;
 }
 
 nicknameInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    joinBtn.click();
-  }
+  if (e.key === 'Enter') joinBtn.click();
+});
+
+socket.on('betStatus', (canBet) => {
+  inputField.disabled = !canBet;
 });
