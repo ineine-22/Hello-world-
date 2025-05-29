@@ -1,3 +1,5 @@
+// 10to10 server 1.0 // 기반 설정 완료. 값 잘 나옴. id, 재접속, 단위 설정 등 편의 기능 추가.
+
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
@@ -5,9 +7,10 @@ const io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-const players = {};
+let players = {};
+let nextId = 1;
 let rm = 1;
-let ct = 10;
+let ct = 8;
 let round = 1;
 
 function makeRM() {
@@ -23,7 +26,7 @@ function makeRM() {
 }
 
 function startGameLoop() {
-  ct = 10;
+  ct = 8;
   io.emit('countdown', ct);
   io.emit('round', round);
 
@@ -34,7 +37,6 @@ function startGameLoop() {
     if (ct === 0) {
       clearInterval(interval);
 
-      // ✅ 0.5초 정도 기다렸다가 반영
       setTimeout(() => {
         rm = makeRM();
 
@@ -49,28 +51,38 @@ function startGameLoop() {
         io.emit('multiplier', rm);
         io.emit('players', players);
 
-        // ✅ 결과를 1.5초 보여준 후 다음 라운드
         setTimeout(() => {
           round++;
           startGameLoop();
         }, 1500);
-      }, 500); // 베팅 입력 유예 시간
+      }, 500);
     }
   }, 1000);
 }
 
-
 io.on('connection', socket => {
   console.log('User connected:', socket.id);
 
-  socket.on('join', name => {
-    players[socket.id] = {
-      name,
-      money: 100000,
-      input: 0,
-      output: 0,
-      pending: 0
-    };
+  socket.on('join', ({ name, code }) => {
+    let existing = Object.values(players).find(p => p.code === code);
+
+    if (existing) {
+      players[socket.id] = existing;
+      delete players[existing.socketId];
+      existing.socketId = socket.id;
+    } else {
+      const id = String(nextId++).padStart(2, '0');
+      players[socket.id] = {
+        id,
+        name,
+        code,
+        socketId: socket.id,
+        money: 100000,
+        input: 0,
+        output: 0,
+        pending: 0
+      };
+    }
 
     socket.emit('multiplier', rm);
     socket.emit('countdown', ct);
@@ -90,8 +102,8 @@ io.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
-    delete players[socket.id];
-    io.emit('players', players);
+    // 삭제하지 않음
+    console.log('User disconnected (not deleted):', socket.id);
   });
 });
 
